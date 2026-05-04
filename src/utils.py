@@ -111,6 +111,101 @@ def generate_Sshape(size=32, thickness=None, length=None, angle=30):
     img = np.clip(img, 0.0, 1.0)
     return img
 
+# Generate an s-shaped image with random signal
+def generate_Sshape_random_signal(
+    size=32,
+    thickness=None,
+    length=None,
+    angle=30,
+    seed=None,
+    low=0.2,
+    high=1.0,
+):
+    """
+    Generate an S-shaped image whose support is the same as before,
+    but whose pixel intensities on the S-shape are random.
+
+    Parameters
+    ----------
+    size : int
+        Image size.
+    thickness : int or None
+        Thickness of the bars.
+    length : int or None
+        Length parameter for the S-shape.
+    angle : float
+        Rotation angle in degrees.
+    seed : int or None
+        Random seed.
+    low, high : float
+        Range of random intensities on the S-shape.
+
+    Returns
+    -------
+    img : 2D numpy array
+        Rotated S-shape with random signal values inside the shape.
+    """
+    if thickness is None:
+        thickness = size // 12
+    if length is None:
+        length = (size - 3) // 2
+
+    rng = np.random.default_rng(seed)
+    support = np.zeros((size, size), dtype=float)
+
+    cx, cy = size // 2, size // 2
+
+    # --- Top horizontal bar ---
+    r0 = cy - length // 2
+    r1 = r0 + thickness
+    c0 = cx - length // 2
+    c1 = cx + length // 2
+    support[r0:r1, c0:c1] = 1.0
+
+    # --- Upper left vertical bar ---
+    r0 = cy - length // 2
+    r1 = cy
+    c0 = cx - length // 2
+    c1 = c0 + thickness
+    support[r0:r1, c0:c1] = 1.0
+
+    # --- Middle horizontal bar ---
+    r0 = cy - thickness // 2
+    r1 = r0 + thickness
+    c0 = cx - length // 2
+    c1 = cx + length // 2
+    support[r0:r1, c0:c1] = 1.0
+
+    # --- Lower right vertical bar ---
+    r0 = cy
+    r1 = cy + length // 2
+    c0 = cx + length // 2 - thickness
+    c1 = cx + length // 2
+    support[r0:r1, c0:c1] = 1.0
+
+    # --- Bottom horizontal bar ---
+    r0 = cy + length // 2 - thickness
+    r1 = cy + length // 2
+    c0 = cx - length // 2
+    c1 = cx + length // 2
+    support[r0:r1, c0:c1] = 1.0
+
+    # Fill the support with random values
+    img = np.zeros_like(support)
+    mask_support = support > 0
+    img[mask_support] = rng.uniform(low, high, size=mask_support.sum())
+
+    # Rotate
+    img = rotate(img, angle=angle, reshape=False, order=1)
+
+    # Keep only inside circle
+    mask = circle_mask(size)
+    img = np.where(mask, img, 0.0)
+
+    # Clip to valid range
+    img = np.clip(img, 0.0, 1.0)
+    return img
+
 # Helper functions for the EM algorithm
 def radon_rows(image, angles):
     return radon(image, theta=angles, circle=True, preserve_range=True).T
