@@ -14,7 +14,7 @@ help:
 notebook:
 	@mkdir -p $(NB_DIR)
 	@for f in $(RAW_DIR)/*.py; do \
-		python3 -m nbconvert --to notebook $$f --output-dir=$(NB_DIR); \
+		python3 -m jupytext --to notebook $$f -o $(NB_DIR)/$$(basename $$f .py).ipynb; \
 	done
 
 notebook_raw:
