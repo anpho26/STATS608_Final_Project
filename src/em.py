@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import rotate
@@ -12,7 +13,8 @@ from src.utils import circle_mask, radon_rows, random_init, backproject_single
 def em_algorithm(data, candidate_angles, 
                  n_em=100, n_inner=50, lr=1e-4, lam=5e-3,
                  temp_start=2.0, temp_end=1.0, temp_decay=0.995,
-                 seed=0, sigma2=None, verbose=-1, x_init=None):
+                 seed=0, sigma2=None, verbose=-1, x_init=None,
+                 imshow=True, imsave=False, dir='plotsEM'):
     
     # Set ups
     n, d = data.shape
@@ -24,8 +26,7 @@ def em_algorithm(data, candidate_angles,
     pbar = tqdm(range(n_em), desc="EM iterations")
     xs = [x.copy()]
     plot_x = list(range(k))
-    # plt.imshow(x)
-    # plt.show()
+    os.makedirs(dir, exist_ok=True)
 
     # Main loop
     for em_it in pbar:
@@ -65,9 +66,9 @@ def em_algorithm(data, candidate_angles,
         # Showing progress
         if verbose >= 0:
             if ((em_it + 1) % verbose == 0) or (em_it == 0):
-                print(f"EM iter {em_it+1:04d} | "
-                      f"temp={temperature:.4f} | "
-                      f"variance={sigma2:.4f} ")
+                title=f"EM iter {em_it+1:04d} | "+\
+                      f"temp={temperature:.4f} | "+\
+                      f"variance={sigma2:.4f} "
                 fig, axes = plt.subplots(1, 2, figsize=(5.4, 2.7))
                 axes[0].imshow(xs[-1], cmap='gray')
                 axes[0].set_title("Sample")
@@ -77,7 +78,11 @@ def em_algorithm(data, candidate_angles,
                 axes[1].set_title("Responsibilities")
                 axes[1].set_xticks([])
                 plt.tight_layout()
-                plt.show()
+                plt.suptitle(title)
+                if imsave:
+                    plt.savefig(f'{dir}/emIter{em_it}.png')
+                if imshow: plt.show()
+                plt.close()
 
     return xs
 
@@ -85,7 +90,9 @@ def em_algorithm(data, candidate_angles,
 def em_algorithm_2classes(data, candidate_angles, 
                           n_em=100, n_inner=50, lr=1e-4, lam=5e-3,
                           temp_start=2.0, temp_end=1.0, temp_decay=0.995,
-                          seed=0, sigma2=None, verbose=-1, x_init1=None, x_init2=None, pi_init=0.5):
+                          seed=0, sigma2=None, verbose=-1,
+                          x_init1=None, x_init2=None, pi_init=0.5,
+                          imshow=True, imsave=False, dir='plotsEM2c'):
     
     # Set ups
     n, d = data.shape
@@ -102,6 +109,7 @@ def em_algorithm_2classes(data, candidate_angles,
     x2s = [x2.copy()]
     pis = [pi]
     plot_x = list(range(k))
+    os.makedirs(dir, exist_ok=True)
 
     # Main loop
     for em_it in pbar:
@@ -172,10 +180,10 @@ def em_algorithm_2classes(data, candidate_angles,
         # Showing progress
         if verbose >= 0:
             if ((em_it + 1) % verbose == 0) or (em_it == 0):
-                print(f"EM iter {em_it+1:04d} | "
-                      f"temp={temperature:.4f} | "
-                      f"variance={sigma2:.4f} | "
-                      f"pi={pi:.4f}")
+                title=f"EM iter {em_it+1:04d} | "+\
+                      f"temp={temperature:.4f} | "+\
+                      f"variance={sigma2:.4f} | "+\
+                      f"pi={pi:.4f}"
                 fig, axes = plt.subplots(1, 4, figsize=(10.8, 2.7))
                 axes[0].imshow(x1s[-1], cmap='gray')
                 axes[0].set_title("Image 1")
@@ -191,7 +199,11 @@ def em_algorithm_2classes(data, candidate_angles,
                 axes[3].bar(plot_x, counts2, width=1.0, linewidth=0)
                 axes[3].set_title("Responsibilities 2")
                 axes[3].set_xticks([])
+                plt.suptitle(title)
                 plt.tight_layout()
-                plt.show()
+                if imsave:
+                    plt.savefig(f'{dir}/em2ClsIter{em_it}.png')
+                if imshow: plt.show()
+                plt.close()
 
     return x1s, x2s, pis

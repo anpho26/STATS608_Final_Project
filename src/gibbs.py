@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import rotate
@@ -166,7 +167,8 @@ def gibbs_sample_radon_known_angles(data, proj_angles, candidate_angles, sigma2,
 
 # Vanilla Gibbs sampler
 def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=1, n_burnins=0,
-                          random_state=None, x_init=None, verbose=0):
+                          random_state=None, x_init=None, verbose=0,
+                          imshow=True, imsave=False, dir='plotsVG'):
 
     # Setups
     np.random.seed(random_state)
@@ -175,6 +177,7 @@ def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=
     mask_d = circle_mask(d)
     p = mask_d.sum()
     radon_map = radon_matrix(d, candidate_angles)
+    os.makedirs(dir, exist_ok=True)
 
     # Init & storage
     x_sum = np.zeros((d, d))
@@ -212,7 +215,6 @@ def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=
         # Verbose
         if verbose > 0 and it % verbose == 0:
             if it >= n_burnins:
-                print(f"Plottings at iteration {it}:")
                 fig, axes = plt.subplots(1, 3, figsize=(8.1, 2.7))
                 axes[0].imshow(samples_x[-1], cmap='gray')
                 axes[0].set_title("Current sample")
@@ -224,10 +226,13 @@ def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=
                 axes[1].set_yticks([])
                 axes[2].hist(counts, bins=np.arange(k+1)-0.5)
                 axes[2].set_xticks([])
+                plt.suptitle(f"Plottings at iteration {it}:")
                 plt.tight_layout()
-                plt.show()
+                if imsave:
+                    plt.savefig(f'{dir}/VGiter{it}.png')
+                if imshow: plt.show()
+                plt.close()
             else:
-                print(f"Plottings at iteration {it}:")
                 fig, axes = plt.subplots(1, 2, figsize=(5.4, 2.7))
                 axes[0].imshow(samples_x[-1], cmap='gray')
                 axes[0].set_title("Current sample")
@@ -235,9 +240,12 @@ def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=
                 axes[0].set_yticks([])
                 axes[1].hist(counts, bins=np.arange(k+1)-0.5)
                 axes[1].set_xticks([])
+                plt.suptitle(f"Plottings at iteration {it}:")
                 plt.tight_layout()
-                plt.show()
-
+                if imsave:
+                    plt.savefig(f'{dir}/VGiter{it}.png')
+                if imshow: plt.show()
+                plt.close()
 
     # Return
     return samples_x[n_burnins:], samples_z[n_burnins:]
@@ -246,7 +254,8 @@ def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=
 def gibbs_LD_sampler(data, candidate_angles,
                      n_gibbs=100, n_burnins=0, n_inner=50, lr=1e-4, lam=5e-3,
                      temp_start=2.0, temp_end=1.0, temp_decay=0.995,
-                     seed=0, sigma2=None, verbose=-1, x_init=None):
+                     seed=0, sigma2=None, verbose=-1, x_init=None,
+                     imshow=True, imsave=False, dir='plotsGLD'):
 
     # Set ups
     n, d = data.shape
@@ -255,6 +264,7 @@ def gibbs_LD_sampler(data, candidate_angles,
     plot_x = list(range(k))
     if sigma2 is None: sigma2 = np.var(data)
     pbar = tqdm(range(n_gibbs+n_burnins), desc="Gibbs LD iterations")
+    os.makedirs(dir, exist_ok=True)
 
     # Initialization
     x = random_init(d, seed=seed) if x_init is None else x_init.copy()
@@ -307,9 +317,9 @@ def gibbs_LD_sampler(data, candidate_angles,
         if verbose >= 0:
             if ((it + 1) % verbose == 0) or (it == 0):
                 if it >= n_burnins:
-                    print(f"Gibbs LD iter {it+1:04d} | "
-                        f"temp={temperature:.4f} | "
-                        f"variance={sigma2:.4f} ")
+                    title=f"Gibbs LD iter {it+1:04d} | "+\
+                          f"temp={temperature:.4f} | "+\
+                          f"variance={sigma2:.4f} "
                     fig, axes = plt.subplots(1, 3, figsize=(8.1, 2.7))
                     axes[0].imshow(xs[-1], cmap='gray')
                     axes[0].set_title("Current sample")
@@ -322,12 +332,16 @@ def gibbs_LD_sampler(data, candidate_angles,
                     axes[2].bar(plot_x, counts, width=1.0, linewidth=0)
                     axes[2].set_title(f"Label count")
                     axes[2].set_xticks([])
+                    plt.suptitle(title)
                     plt.tight_layout()
-                    plt.show()
+                    if imsave:
+                        plt.savefig(f'{dir}/GLDiter{it}.png')
+                    if imshow: plt.show()
+                    plt.close()
                 else:
-                    print(f"Gibbs LD iter {it+1:04d} | "
-                        f"temp={temperature:.4f} | "
-                        f"variance={sigma2:.4f} ")
+                    title=f"Gibbs LD iter {it+1:04d} | "+\
+                          f"temp={temperature:.4f} | "+\
+                          f"variance={sigma2:.4f} "
                     fig, axes = plt.subplots(1, 2, figsize=(5.4, 2.7))
                     axes[0].imshow(xs[-1], cmap='gray')
                     axes[0].set_title("Current sample")
@@ -336,8 +350,12 @@ def gibbs_LD_sampler(data, candidate_angles,
                     axes[1].bar(plot_x, counts, width=1.0, linewidth=0)
                     axes[1].set_title(f"Label count")
                     axes[1].set_xticks([])
+                    plt.suptitle(title)
                     plt.tight_layout()
-                    plt.show()
+                    if imsave:
+                        plt.savefig(f'{dir}/GLDiter{it}.png')
+                    if imshow: plt.show()
+                    plt.close()
 
 
     return xs[n_burnins+1:], zs[n_burnins+1:]

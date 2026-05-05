@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import rotate
@@ -14,7 +15,8 @@ from src.gibbs import pack_image, unpack_image, radon_matrix, gibbs_sample_radon
 
 # Vanilla Gibbs sampler
 def vanilla_gibbs_mixture_sampler(data, candidate_angles, sigma2, sigma_eps2, alpha=1., n_mixtures=1, n_samples=1, n_burnins=0,
-                                  random_state=None, x_init=None, verbose=0):
+                                  random_state=None, x_init=None, verbose=0,
+                                  imshow=True, imsave=False, dir='plotsGibbsMix'):
 
     # Setups
     np.random.seed(random_state)
@@ -26,6 +28,7 @@ def vanilla_gibbs_mixture_sampler(data, candidate_angles, sigma2, sigma_eps2, al
     radon_map = radon_matrix(d, candidate_angles)
     alpha = np.array(alpha)
     if len(alpha) == 1: alpha = np.array([alpha[0] for _ in range(m)])
+    os.makedirs(dir, exist_ok=True)
 
     # Init & storage
     x_sum = np.zeros((m, d, d))
@@ -75,7 +78,6 @@ def vanilla_gibbs_mixture_sampler(data, candidate_angles, sigma2, sigma_eps2, al
 
         # Verbose
         if verbose > 0 and it % verbose == 0:
-            print(f"Plottings at iteration {it}:")
             fig, axes = plt.subplots(2, (n_mixtures+1), figsize=(2.7*(n_mixtures+1), 5.4))
             for i in range(m):
                 axes[0][i].imshow(samples_x[-1][i], cmap='gray')
@@ -94,8 +96,12 @@ def vanilla_gibbs_mixture_sampler(data, candidate_angles, sigma2, sigma_eps2, al
             axes[1][m].hist(c, bins=np.arange(m+1) - 0.5)
             axes[1][m].set_xticks([])
             axes[1][m].set_title("Class dist.")
+            plt.suptitle(f"Plottings at iteration {it}:")
             plt.tight_layout()
-            plt.show()
+            if imsave:
+                plt.savefig(f'{dir}/GibbsMixIter{it}.png')
+            if imshow: plt.show()
+            plt.close()
 
     # Return
     return samples_x[n_burnins:], samples_z[n_burnins:], samples_c[n_burnins:], samples_pi[n_burnins:]
