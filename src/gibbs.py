@@ -359,3 +359,198 @@ def gibbs_LD_sampler(data, candidate_angles,
 
 
     return xs[n_burnins+1:], zs[n_burnins+1:]
+
+
+#MALA
+def compute_grad_U(x, data, z, candidate_angles, sigma2, lam):
+    d = x.shape[0]
+    pred = radon_rows(x, candidate_angles)
+
+    # one-hot responsibilities
+    k = len(candidate_angles)
+    R = np.zeros((len(z), k))
+    R[np.arange(len(z)), z] = 1
+
+    B = R.T @ data
+    counts = R.sum(axis=0)
+
+    grad = np.zeros_like(x)
+
+    for m, ang in enumerate(candidate_angles):
+        if counts[m] < 1e-12:
+            continue
+        resid = counts[m] * pred[m] - B[m]
+        grad += backproject_single(resid, ang, d)
+
+    return grad / sigma2 + lam * x
+
+def compute_U(x, data, z, candidate_angles, sigma2, lam):
+    pred = radon_rows(x, candidate_angles)
+    resid = data - pred[z]
+    data_term = 0.5 / sigma2 * np.sum(resid**2)
+    prior_term = 0.5 * lam * np.sum(x**2)
+    return data_term + prior_term
+
+def log_q(x_from, x_to, grad_from, step):
+    mean = x_from - step * grad_from
+    diff = x_to - mean
+    return - np.sum(diff**2) / (4 * step)
+
+def mala_step(x, data, z, candidate_angles,
+              sigma2, lam, step, mask):
+
+    grad_x = compute_grad_U(x, data, z, candidate_angles, sigma2, lam)
+
+    noise = np.random.randn(*x.shape)
+    x_prop = x - step * grad_x + np.sqrt(2 * step) * noise
+    x_prop = np.where(mask, x_prop, 0.0)
+
+    # compute energies
+    U_x = compute_U(x, data, z, candidate_angles, sigma2, lam)
+    U_prop = compute_U(x_prop, data, z, candidate_angles, sigma2, lam)
+
+    grad_prop = compute_grad_U(x_prop, data, z, candidate_angles, sigma2, lam)
+
+    log_forward = log_q(x, x_prop, grad_x, step)
+    log_backward = log_q(x_prop, x, grad_prop, step)
+
+    log_alpha = -U_prop + U_x + log_backward - log_forward
+
+    if np.log(np.random.rand()) < log_alpha:
+        return x_prop, True
+    else:
+        return x, False
+
+
+def MALA(data, candidate_angles,
+        n_gibbs=100, n_burnins=0, n_inner=50, lr=1e-4, lam=5e-3,
+        temp_start=2.0, temp_end=1.0, temp_decay=0.995,
+        seed=0, sigma2=None, verbose=-1, x_init=None,
+        imshow=True, imsave=False, dir='plotsMALA'):
+
+    np.random.seed(seed)
+
+    n, d = data.shape
+    k = len(candidate_angles)
+    mask = circle_mask(d)
+    plot_x = list(range(k))
+
+    if sigma2 is None:
+        sigma2 = np.var(data)
+
+    pbar = tqdm(range(n_gibbs + n_burnins), desc="MALA iterations")
+    os.makedirs(dir, exist_ok=True)
+
+    x = random_init(d, seed=seed) if x_init is None else x_init.copy()
+    x = np.where(mask, x, 0.0)
+
+    z = np.random.randint(k, size=n)
+
+    xs = [x.copy()]
+    zs = [z.copy()]
+    x_mean = np.zeros_like(x)
+
+    for it in pbar:
+        temperature = max(temp_end, temp_start * (temp_decay ** it))
+
+        # Sample z | x, y
+        pred = radon_rows(x, candidate_angles)
+
+        for i in range(n):
+            resid = data[i] - pred
+            logp = -0.5 * np.sum(resid * resid, axis=1) / (temperature * sigma2)
+            logp -= logsumexp(logp)
+            z[i] = np.random.choice(np.arange(k), p=np.exp(logp))
+
+        counts = np.bincount(z, minlength=k)
+
+        # Sample x | z, y using MALA
+        accepts = 0
+        for _ in range(n_inner):
+            x, accepted = mala_step(
+                x, data, z, candidate_angles,
+                sigma2, lam, lr, mask
+            )
+            accepts += accepted
+
+        acc_rate = accepts / n_inner
+
+        # Store
+        xs.append(x.copy())
+        zs.append(z.copy())
+
+        if it >= n_burnins:
+            x_mean += x.copy()
+
+        pbar.set_postfix({
+            "temp": f"{temperature:.3f}",
+            "acc": f"{acc_rate:.2f}",
+        })
+
+        # Showing progress
+        if verbose >= 0:
+            if ((it + 1) % verbose == 0) or (it == 0):
+
+                if it >= n_burnins:
+                    denom = it + 1 - n_burnins
+                    title = (
+                        f"Gibbs MALA iter {it+1:04d} | "
+                        f"temp={temperature:.4f} | "
+                        f"variance={sigma2:.4f} | "
+                        f"acc={acc_rate:.3f}"
+                    )
+
+                    fig, axes = plt.subplots(1, 3, figsize=(8.1, 2.7))
+
+                    axes[0].imshow(xs[-1], cmap='gray')
+                    axes[0].set_title("Current sample")
+                    axes[0].set_xticks([])
+                    axes[0].set_yticks([])
+
+                    axes[1].imshow(x_mean / denom, cmap='gray')
+                    axes[1].set_title("Running mean")
+                    axes[1].set_xticks([])
+                    axes[1].set_yticks([])
+
+                    axes[2].bar(plot_x, counts, width=1.0, linewidth=0)
+                    axes[2].set_title("Label count")
+                    axes[2].set_xticks([])
+
+                    plt.suptitle(title)
+                    plt.tight_layout()
+
+                    if imsave:
+                        plt.savefig(f'{dir}/MALAiter{it}.png')
+                    if imshow:
+                        plt.show()
+                    plt.close()
+
+                else:
+                    title = (
+                        f"MALA iter {it+1:04d} | "
+                        f"temp={temperature:.4f} | "
+                        f"variance={sigma2:.4f} | "
+                        f"acc={acc_rate:.3f}"
+                    )
+
+                    fig, axes = plt.subplots(1, 2, figsize=(5.4, 2.7))
+
+                    axes[0].imshow(xs[-1], cmap='gray')
+                    axes[0].set_title("Current sample")
+                    axes[0].set_xticks([])
+                    axes[0].set_yticks([])
+
+                    axes[1].bar(plot_x, counts, width=1.0, linewidth=0)
+                    axes[1].set_title("Label count")
+                    axes[1].set_xticks([])
+
+                    plt.suptitle(title)
+                    plt.tight_layout()
+
+                    if imsave:
+                        plt.savefig(f'{dir}/MALAiter{it}.png')
+                    if imshow:
+                        plt.show()
+                    plt.close()
+
+    return xs[n_burnins + 1:], zs[n_burnins + 1:]

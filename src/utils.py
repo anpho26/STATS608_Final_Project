@@ -24,8 +24,9 @@ def load_image(path, size=32):
 # Circle masking
 def circle_mask(d):
     y, x = np.ogrid[:d, :d]
-    cy = cx = d / 2.0
-    return (x - cx) ** 2 + (y - cy) ** 2 <= ((d-1) // 2) ** 2
+    cy = cx = (d - 1) / 2.0
+    r = d / 2.0
+    return (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2
 
 # Image generation function
 def make_diagonal_rectangle_in_circle(size=32, rect_height=4, rect_width=18, angle=45):
@@ -59,8 +60,10 @@ def generate_square(size=32):
 
 # Generate an s-shaped image
 def generate_Sshape(size=32, thickness=None, length=None, angle=30):
-    if thickness is None: thickness = size//12
-    if length is None: length = (size-3)//2
+    if thickness is None:
+        thickness = max(1, size // 12)
+    if length is None:
+        length = max(4, (size - 3) // 2)
     img = np.zeros((size, size), dtype=float)
 
     cx, cy = size // 2, size // 2
@@ -146,9 +149,9 @@ def generate_Sshape_random_signal(
         Rotated S-shape with random signal values inside the shape.
     """
     if thickness is None:
-        thickness = size // 12
+        thickness = max(1, size // 12)
     if length is None:
-        length = (size - 3) // 2
+        length = max(4, (size - 3) // 2)
 
     rng = np.random.default_rng(seed)
     support = np.zeros((size, size), dtype=float)

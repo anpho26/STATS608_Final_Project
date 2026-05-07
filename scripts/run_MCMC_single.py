@@ -11,13 +11,17 @@ from src.utils import load_image, circle_mask, simulate_data, \
                       generate_i, generate_square, generate_Sshape
 from src.experiment import MCMC_experiment
 
-d = 32
+d = 4
 n = 1000
 seed1 = 345
-seed2 = 100
 sigma2 = 0.5
 
 candidate_angles = np.arange(0, 180, 4, dtype=float)
+
+
+
+# run for S-shaped image
+
 
 mask_d = circle_mask(d)
 img = generate_Sshape(size=d)
@@ -31,5 +35,41 @@ data, true_angles = simulate_data(
     seed=seed1,
 )
 
-MCMC_experiment(d=d, img=img, data=data, seed=seed2,
-                candidate_angles=candidate_angles, sigma2=sigma2, save_dir='exp_output/test1')
+seeds = [100, 200, 300]
+
+for seed in seeds:
+    MCMC_experiment(
+        d=d,
+        img=img,
+        data=data,
+        seed=seed,
+        candidate_angles=candidate_angles,
+        sigma2=sigma2,
+        save_dir=f'exp_output/test1_seed{seed}'
+    )
+
+# run MCMC for random-signal S-shaped image
+
+img_2 = generate_Sshape(size=d)
+img_2 = np.where(mask_d, img_2, 0.0)
+
+data_2, true_angles_2 = simulate_data(
+    img_2,
+    candidate_angles,
+    n_obs=n,
+    noise_std=np.sqrt(sigma2),
+    seed=seed1,
+)
+
+seeds = [100, 200, 300]
+
+for seed in seeds:
+    MCMC_experiment(
+        d=d,
+        img=img_2,
+        data=data_2,
+        seed=seed,
+        candidate_angles=candidate_angles,
+        sigma2=sigma2,
+        save_dir=f'exp_output/test2_seed{seed}'
+    )

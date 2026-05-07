@@ -52,7 +52,7 @@ xs_em = em_algorithm(data, candidate_angles,
 xs_em_refined = em_algorithm(data, candidate_angles,
                              n_em=300, n_inner=50, lr=1e-5, lam=5e-3,
                              temp_start=2.0, temp_end=1.0, temp_decay=0.995,
-                             seed=0, sigma2=sigma2, verbose=10, x_init=xs_em[-1])
+                          seed=0, sigma2=sigma2, verbose=10, x_init=xs_em[-1])
 
 
 # In[7]:
