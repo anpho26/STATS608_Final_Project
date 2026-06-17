@@ -26,7 +26,7 @@ def circle_mask(d):
     y, x = np.ogrid[:d, :d]
     cy = cx = (d - 1) / 2.0
     r = d / 2.0
-    return (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2
+    return (x - cx) ** 2 + (y - cy) ** 2 <= (r-1/2) ** 2
 
 # Image generation function
 def make_diagonal_rectangle_in_circle(size=32, rect_height=4, rect_width=18, angle=45):
