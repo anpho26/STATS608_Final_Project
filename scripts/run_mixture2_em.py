@@ -8,7 +8,7 @@ from cryo_em_em.em_mixture import em_reconstruct_mixture2
 
 
 d = 32
-candidate_angles = np.arange(0, 180, 4, dtype=float)
+candidate_angles = np.arange(0, 360, 4, dtype=float)
 mask = circle_mask(d)
 
 img1 = make_diagonal_stick(size=d, width=1)
