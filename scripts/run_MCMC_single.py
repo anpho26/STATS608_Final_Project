@@ -21,7 +21,7 @@ candidate_angles = np.arange(0, 360, 4, dtype=float)
 
 # run MCMC for phantom image
 
-img_3 = load_image("data/raw/phantom.png", size=d)
+img_3 = load_image("data/raw/13098l.png", size=d)
 
 mask_d = circle_mask(d)
 img_3 = np.where(mask_d, img_3, 0.0)

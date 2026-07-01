@@ -12,13 +12,24 @@ from skimage.transform import radon, iradon, resize
 # Image loader
 def load_image(path, size=32):
     img = imread(path)
+
+    # If RGB or RGBA, keep only RGB channels
     if img.ndim == 3:
-        img = rgb2gray(img)
+        img = rgb2gray(img[:, :, :3])
+
     img = img.astype(float)
+
     img -= img.min()
     if img.max() > 0:
         img /= img.max()
-    img = resize(img, (size, size), anti_aliasing=True)
+
+    img = resize(
+        img,
+        (size, size),
+        anti_aliasing=True,
+        preserve_range=True,
+    )
+
     return img
 
 # Circle masking
