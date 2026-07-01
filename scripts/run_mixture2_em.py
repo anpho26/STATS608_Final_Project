@@ -20,13 +20,14 @@ img1 = np.where(mask, img1, 0.0)
 img2 = np.where(mask, img2, 0.0)
 
 Y, true_classes, true_angles = simulate_mixture_data(
-    img1,
-    img2,
-    candidate_angles,
-    n_obs=500,
-    noise_std=0.01,
+    image1=img_1,
+    image2=img_2,
+    n_obs=n,
+    noise_std=np.sqrt(sigma2),
     pi=(0.5, 0.5),
-    seed=123,
+    seed=seed1,
+    angle_low=0.0,
+    angle_high=360.0,
 )
 
 out = em_reconstruct_mixture2(

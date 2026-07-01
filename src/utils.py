@@ -286,30 +286,55 @@ def radon_rows(image, angles):
     return radon(image, theta=angles, circle=True, preserve_range=True).T
 
 # Simulate
-def simulate_data(image, candidate_angles, n_obs=60, noise_std=0.01, seed=0):
+def simulate_data(
+    image,
+    n_obs=60,
+    noise_std=0.01,
+    seed=0,
+    angle_low=0.0,
+    angle_high=360.0,
+):
     rng = np.random.default_rng(seed)
-    idx = rng.integers(0, len(candidate_angles), size=n_obs)
-    true_angles = candidate_angles[idx]
+
+    true_angles = rng.uniform(angle_low, angle_high, size=n_obs)
+
     clean = radon_rows(image, true_angles)
     Y = clean + noise_std * rng.standard_normal(clean.shape)
+
     return Y, true_angles
 
-def simulate_mixture_data(image1, image2, candidate_angles,
-                          n_obs=500, noise_std=0.01, pi=(0.5, 0.5), seed=0):
+def simulate_mixture_data(
+    image1,
+    image2,
+    n_obs=500,
+    noise_std=0.01,
+    pi=(0.5, 0.5),
+    seed=0,
+    angle_low=0.0,
+    angle_high=360.0,
+):
     rng = np.random.default_rng(seed)
+
+    # latent class labels: 0 for image1, 1 for image2
     z = rng.choice(2, size=n_obs, p=pi)
-    angle_idx = rng.integers(0, len(candidate_angles), size=n_obs)
-    true_angles = candidate_angles[angle_idx]
+
+    # continuous angles
+    true_angles = rng.uniform(angle_low, angle_high, size=n_obs)
 
     Y = []
     for i in range(n_obs):
         image = image1 if z[i] == 0 else image2
+
         y = radon_rows(image, [true_angles[i]])[0]
         y = y + noise_std * rng.standard_normal(y.shape)
+
         Y.append(y)
 
     Y = np.asarray(Y)
+
+    # return classes as 1 and 2, matching your original convention
     true_classes = z + 1
+
     return Y, true_classes, true_angles
 
 # Random initialization function

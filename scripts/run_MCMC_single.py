@@ -28,7 +28,6 @@ img_3 = np.where(mask_d, img_3, 0.0)
 
 data_3, true_angles_3 = simulate_data(
     img_3,
-    candidate_angles,
     n_obs=n,
     noise_std=np.sqrt(sigma2),
     seed=seed1,
