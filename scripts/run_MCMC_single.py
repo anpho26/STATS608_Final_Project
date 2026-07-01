@@ -17,7 +17,7 @@ n = 1000
 seed1 = 345
 sigma2 = 0.5
 
-candidate_angles = np.arange(0, 180, 4, dtype=float)
+candidate_angles = np.arange(0, 360, 4, dtype=float)
 
 # run MCMC for phantom image
 
