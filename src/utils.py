@@ -209,6 +209,78 @@ def generate_Sshape_random_signal(
     img = np.clip(img, 0.0, 1.0)
     return img
 
+# make "?" and "4" symbols
+def make_symbol(symbol="?", size=32, angle=0, canvas_size=256, pad_frac=0.35):
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFont
+    from skimage.transform import resize, rotate
+    from matplotlib import font_manager
+
+    # Draw on large black canvas
+    img = Image.new("L", (canvas_size, canvas_size), 0)
+    draw = ImageDraw.Draw(img)
+
+    font_path = font_manager.findfont("DejaVu Sans")
+    font = ImageFont.truetype(font_path, int(0.85 * canvas_size))
+
+    bbox = draw.textbbox((0, 0), symbol, font=font)
+    w = bbox[2] - bbox[0]
+    h = bbox[3] - bbox[1]
+
+    x = (canvas_size - w) / 2 - bbox[0]
+    y = (canvas_size - h) / 2 - bbox[1]
+
+    draw.text((x, y), symbol, fill=255, font=font)
+
+    img = np.asarray(img).astype(float) / 255.0
+
+    # Crop to symbol
+    rows, cols = np.where(img > 0)
+    r0, r1 = rows.min(), rows.max()
+    c0, c1 = cols.min(), cols.max()
+    img = img[r0:r1 + 1, c0:c1 + 1]
+
+    # Pad enough so rotation does not cut it
+    h, w = img.shape
+    pad = int(pad_frac * max(h, w))
+    img = np.pad(img, pad_width=pad, mode="constant", constant_values=0)
+
+    # Rotate
+    if angle != 0:
+        img = rotate(
+            img,
+            angle=angle,
+            resize=False,
+            mode="constant",
+            cval=0.0,
+            preserve_range=True,
+        )
+
+    # Crop again after rotation
+    rows, cols = np.where(img > 1e-6)
+    r0, r1 = rows.min(), rows.max()
+    c0, c1 = cols.min(), cols.max()
+    img = img[r0:r1 + 1, c0:c1 + 1]
+
+    # Add small final padding
+    final_pad = int(0.15 * max(img.shape))
+    img = np.pad(img, final_pad, mode="constant", constant_values=0)
+
+    # Resize to final size
+    img = resize(
+        img,
+        (size, size),
+        anti_aliasing=True,
+        preserve_range=True,
+    )
+
+    img -= img.min()
+    if img.max() > 0:
+        img /= img.max()
+
+    return img
+
+
 # Helper functions for the EM algorithm
 def radon_rows(image, angles):
     return radon(image, theta=angles, circle=True, preserve_range=True).T
