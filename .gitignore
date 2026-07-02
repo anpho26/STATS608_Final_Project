@@ -6,3 +6,4 @@ results/
 *.pdf
 *.npy
 *.npz
+notebooks/

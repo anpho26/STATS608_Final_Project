@@ -9,6 +9,7 @@ help:
 	@echo "  make notebook                 - Convert all .py in $(RAW_DIR) to .ipynb in $(NB_DIR)"
 	@echo "  make notebook_raw             - Convert all .ipynb in $(NB_DIR) to .py in $(RAW_DIR)"
 	@echo "  make notebook_raw FILE=name   - Convert one notebook (e.g., make notebook_raw FILE=test.ipynb)"
+	@echo "  make clean                    - Remove all generated notebooks"
 	@echo "  make launch                   - Launch Jupyter Notebook"
 
 notebook:
@@ -26,6 +27,11 @@ else
 		python3 -m nbconvert --to script $$f --output-dir=$(RAW_DIR); \
 	done
 endif
+
+clean:
+	@rm -rf $(NB_DIR)
+	@mkdir -p $(NB_DIR)
+	@echo "Cleaned $(NB_DIR)"
 
 # Launch Jupyter
 launch:

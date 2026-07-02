@@ -220,6 +220,129 @@ def generate_Sshape_random_signal(
     img = np.clip(img, 0.0, 1.0)
     return img
 
+def _segment_distance(X, Y, x0, y0, x1, y1):
+    """
+    Distance from points (X,Y) to the line segment
+    joining (x0,y0) and (x1,y1).
+    """
+    dx = x1 - x0
+    dy = y1 - y0
+    L2 = dx*dx + dy*dy
+
+    t = ((X - x0)*dx + (Y - y0)*dy) / L2
+    t = np.clip(t, 0.0, 1.0)
+
+    px = x0 + t*dx
+    py = y0 + t*dy
+
+    return np.sqrt((X - px)**2 + (Y - py)**2)
+
+def generate_7shape(size=64, theta=0, thickness=None):
+    d = size
+    if thickness is None:
+        thickness = max(2, round(d/8))
+
+    # coordinate grid centered at origin
+    y, x = np.mgrid[:d, :d]
+    x = x - (d-1)/2
+    y = y - (d-1)/2
+
+    # rotate coordinates
+    t = np.deg2rad(theta)
+    xr = np.cos(t)*x + np.sin(t)*y
+    yr = -np.sin(t)*x + np.cos(t)*y
+
+    # slightly smaller than the inscribed circle
+    R = 0.70 * (d-1)/2
+
+    # vertices
+    p0 = (-0.95*R, -0.75*R)   # left end
+    p1 = ( 0.95*R, -0.75*R)   # top-right
+    p2 = (-0.05*R,  0.10*R)   # elbow
+    p3 = (-0.05*R,  1.00*R)   # bottom
+
+    d1 = _segment_distance(xr, yr, *p0, *p1)
+    d2 = _segment_distance(xr, yr, *p1, *p2)
+    d3 = _segment_distance(xr, yr, *p2, *p3)
+
+    img = (
+        (d1 <= thickness/2) |
+        (d2 <= thickness/2) |
+        (d3 <= thickness/2)
+    ).astype(float)
+
+    img *= circle_mask(d)
+    return img
+
+def generate_4shape(size=64, theta=0, thickness=None):
+    """
+    Generate a handwritten-style '4' shape.
+
+    Parameters
+    ----------
+    d : int
+        Image size.
+    theta : float
+        Rotation angle in degrees.
+    thickness : float
+        Stroke thickness.
+    """
+
+    d = size
+    if thickness is None:
+        thickness = max(2, round(d/8))
+
+    # coordinate grid centered at origin
+    y, x = np.mgrid[:d, :d]
+    x = x - (d-1)/2
+    y = y - (d-1)/2
+
+    # rotate coordinates
+    t = np.deg2rad(theta)
+    xr = np.cos(t)*x + np.sin(t)*y
+    yr = -np.sin(t)*x + np.cos(t)*y
+
+    # figure size relative to inscribed circle
+    R = 0.68 * (d-1)/2
+
+    # vertices describing the "4"
+    left_top    = (-0.75*R, -0.95*R)
+    left_bottom = (-0.75*R, -0.05*R)
+
+    right_top    = ( 0.45*R, -0.95*R)
+    right_bottom = ( 0.45*R,  0.95*R)
+
+    # crossbar height
+    cross_left  = left_bottom
+    cross_right = (0.45*R, -0.05*R)
+
+    # distances to segments
+    d1 = _segment_distance(
+        xr, yr,
+        *left_top, *left_bottom
+    )
+
+    d2 = _segment_distance(
+        xr, yr,
+        *right_top, *right_bottom
+    )
+
+    d3 = _segment_distance(
+        xr, yr,
+        *cross_left, *cross_right
+    )
+
+    img = (
+        (d1 <= thickness/2) |
+        (d2 <= thickness/2) |
+        (d3 <= thickness/2)
+    ).astype(float)
+
+    # keep inside the inscribed circle
+    img *= circle_mask(d)
+
+    return img
+
 # make "?" and "4" symbols
 def make_symbol(symbol="?", size=32, angle=0, canvas_size=256, pad_frac=0.35):
     import numpy as np
@@ -368,3 +491,4 @@ def backproject_single(proj, angle, output_size):
         circle=True,
         output_size=output_size,
     )
+
