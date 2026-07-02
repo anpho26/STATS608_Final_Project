@@ -8,8 +8,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from skimage.transform import resize
 from src.utils import load_image, circle_mask, simulate_data, \
-                      generate_i, generate_square, generate_Sshape
-from src.experiment import MCMC_experiment
+                      generate_i, generate_square, generate_Sshape, generate_7shape
+from src.experiment import MCMC_experiment, MCMC_experiment_poster
 from skimage.color import rgb2gray
 
 d = 32
@@ -21,7 +21,8 @@ candidate_angles = np.arange(0, 360, 4, dtype=float)
 
 # run MCMC for phantom image
 
-img_3 = load_image("data/raw/13098l.png", size=d)
+# img_3 = load_image("data/raw/13098l.png", size=d)
+img_3 = generate_7shape(size= 32)
 
 mask_d = circle_mask(d)
 img_3 = np.where(mask_d, img_3, 0.0)
@@ -33,18 +34,35 @@ data_3, true_angles_3 = simulate_data(
     seed=seed1,
 )
 
-seeds = [100, 200, 300]
+seeds = [100]
+
+# Default parameters
+vg_params = {'n_samples': 2000, 'n_burnins': 0, 'verbose': 10}
+mala_params = {'n_gibbs': 2000, 'n_burnins': 0, 'verbose': 10}
 
 for seed in seeds:
-    MCMC_experiment(
+    MCMC_experiment_poster(
         d=d,
         img=img_3,
         data=data_3,
         seed=seed,
         candidate_angles=candidate_angles,
         sigma2=sigma2,
-        save_dir=f'exp_output/test3_seed{seed}'
+        save_dir=f'exp_output/test_poster0_seed{seed}',
+        vg_params=vg_params,
+        mala_params=mala_params
     )
+
+# for seed in seeds:
+#     MCMC_experiment(
+#         d=d,
+#         img=img_3,
+#         data=data_3,
+#         seed=seed,
+#         candidate_angles=candidate_angles,
+#         sigma2=sigma2,
+#         save_dir=f'exp_output/test3_seed{seed}'
+#     )
 
 # # run for S-shaped image
 
@@ -99,6 +117,3 @@ for seed in seeds:
 #         sigma2=sigma2,
 #         save_dir=f'exp_output/test2_seed{seed}'
 #     )
-
-
-

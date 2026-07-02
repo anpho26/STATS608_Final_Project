@@ -189,7 +189,7 @@ def vanilla_gibbs_sampler(data, candidate_angles, sigma2, sigma_eps2, n_samples=
     # print(x.shape, z.shape, mask_d.shape, radon_map.shape)
 
     # Main loop
-    for it in tqdm(range(n_samples+n_burnins)):
+    for it in tqdm(range(n_samples+n_burnins), desc="Vanilla Gibbs iterations"):
 
         # Sample z | x, y (data)
         sino = (x @ radon_map.T).reshape((k, d))
