@@ -449,24 +449,17 @@ def simulate_mixture_data(
 ):
     rng = np.random.default_rng(seed)
 
-    # latent class labels: 0 for image1, 1 for image2
     z = rng.choice(2, size=n_obs, p=pi)
-
-    # continuous angles
     true_angles = rng.uniform(angle_low, angle_high, size=n_obs)
 
     Y = []
     for i in range(n_obs):
         image = image1 if z[i] == 0 else image2
-
         y = radon_rows(image, [true_angles[i]])[0]
         y = y + noise_std * rng.standard_normal(y.shape)
-
         Y.append(y)
 
     Y = np.asarray(Y)
-
-    # return classes as 1 and 2, matching your original convention
     true_classes = z + 1
 
     return Y, true_classes, true_angles
