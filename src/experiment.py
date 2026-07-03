@@ -353,7 +353,7 @@ def MCMC_experiment_poster(d, img, data, seed, candidate_angles, sigma2,
     
     # Directories
     dirs = [f'{save_dir}/em_raw', f'{save_dir}/em_refined', 
-            f'{save_dir}/vg', f'{save_dir}/gld', f'{save_dir}/mala',
+            f'{save_dir}/vg', f'{save_dir}/mala',
             f'{save_dir}/results']
 
     for dir in dirs:
@@ -502,7 +502,7 @@ def MCMC_experiment_poster(d, img, data, seed, candidate_angles, sigma2,
         ax.set_xticks([])
         ax.set_yticks([])
 
-    # <-- added
+    # Save image
     plt.tight_layout(rect=[0.05, 0, 1, 1])
     cax = fig.add_axes([0.02, 0.15, 0.015, 0.7])
     fig.colorbar(im, cax=cax)

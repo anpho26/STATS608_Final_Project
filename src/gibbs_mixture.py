@@ -26,7 +26,10 @@ def vanilla_gibbs_mixture_sampler(data, candidate_angles, sigma2, sigma_eps2, al
     mask_d = circle_mask(d)
     p = mask_d.sum()
     radon_map = radon_matrix(d, candidate_angles)
-    alpha = np.array(alpha)
+    if not isinstance(alpha, np.ndarray):
+        if isinstance(alpha, list):
+            alpha = np.array(alpha)
+        else: alpha = np.array([alpha])
     if len(alpha) == 1: alpha = np.array([alpha[0] for _ in range(m)])
     os.makedirs(dir, exist_ok=True)
 

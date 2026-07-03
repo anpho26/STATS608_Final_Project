@@ -21,6 +21,14 @@ from src.gibbs_mixture import (
     MALA_mixture_sampler,
 )
 
+from src.em import (
+    em_algorithm,
+    em_algorithm_2classes,
+)
+
+from src.experiment_mixtures import (
+    MCMC_experiment_mixture2
+)
 
 # -----------------------------
 # Basic settings
@@ -34,7 +42,7 @@ sigma_eps2 = sigma2
 
 candidate_angles = np.arange(0, 360, 4, dtype=float)
 
-seeds = [100, 200, 300]
+seeds = [100]
 
 
 # -----------------------------
@@ -86,75 +94,97 @@ print("Data shape:", data.shape)
 print("True class counts:", np.bincount(true_classes)[1:])
 print("True angle range:", true_angles.min(), true_angles.max())
 
-
-# -----------------------------
-# Run vanilla Gibbs mixture
-# -----------------------------
-
+seeds = [0, 100, 200]
 for seed in seeds:
-    print(f"\nRunning vanilla Gibbs mixture, seed={seed}")
-
-    out_dir = f"exp_output/mixture2_gibbs_seed{seed}"
-
-    xs_gibbs, zs_gibbs, cs_gibbs, pis_gibbs = vanilla_gibbs_mixture_sampler(
-        data=data,
-        candidate_angles=candidate_angles,
-        sigma2=sigma2,
-        sigma_eps2=sigma_eps2,
-        alpha=1.0,
-        n_mixtures=2,
-        n_samples=200,
-        n_burnins=50,
-        random_state=seed,
-        x_init=None,
-        verbose=10,
-        imshow=False,
-        imsave=True,
-        dir=out_dir,
-    )
-
-    np.save(f"{out_dir}/xs_gibbs.npy", np.array(xs_gibbs))
-    np.save(f"{out_dir}/zs_gibbs.npy", np.array(zs_gibbs))
-    np.save(f"{out_dir}/cs_gibbs.npy", np.array(cs_gibbs))
-    np.save(f"{out_dir}/pis_gibbs.npy", np.array(pis_gibbs))
-
-    print(f"Saved Gibbs mixture output to {out_dir}")
+    print(f'Running experiment with seed {seed} ...')
+    MCMC_experiment_mixture2(data, candidate_angles,
+                            seed=seed, sigma2=sigma2, sigma_eps2=sigma_eps2,
+                            save_dir=f'exp_output/test_mcmc_mix_s{seed}')
 
 
-# -----------------------------
-# Run MALA mixture
-# -----------------------------
+# # -----------------------------
+# # Run EM mixture
+# # -----------------------------
 
-for seed in seeds:
-    print(f"\nRunning MALA mixture, seed={seed}")
+# # x1s, x2s, pis = em_algorithm_2classes(data, candidate_angles, 
+# #                                       n_em=200, n_inner=50, lr=1e-4, lam=5e-3,
+# #                                       temp_start=2.0, temp_end=1.0, temp_decay=0.995,
+# #                                       seed=0, sigma2=None, verbose=10,
+# #                                       x_init1=None, x_init2=None, pi_init=0.555,
+# #                                       imshow=False, imsave=True, dir='exp_output/mixture2_em_test')
 
-    out_dir = f"exp_output/mixture2_mala_seed{seed}"
 
-    xs_mala, zs_mala, cs_mala, pis_mala = MALA_mixture_sampler(
-        data=data,
-        candidate_angles=candidate_angles,
-        sigma2=sigma2,
-        alpha=1.0,
-        n_mixtures=2,
-        n_gibbs=200,
-        n_burnins=50,
-        n_inner=20,
-        lr=1e-5,
-        lam=5e-3,
-        temp_start=2.0,
-        temp_end=1.0,
-        temp_decay=0.995,
-        seed=seed,
-        x_init=None,
-        verbose=10,
-        imshow=False,
-        imsave=True,
-        dir=out_dir,
-    )
+# # x_init = np.array([x1s[-1], x2s[-1]])
+# x_init_cheat = np.array([img_1, img_2])
 
-    np.save(f"{out_dir}/xs_mala.npy", np.array(xs_mala))
-    np.save(f"{out_dir}/zs_mala.npy", np.array(zs_mala))
-    np.save(f"{out_dir}/cs_mala.npy", np.array(cs_mala))
-    np.save(f"{out_dir}/pis_mala.npy", np.array(pis_mala))
+# # -----------------------------
+# # Run vanilla Gibbs mixture
+# # -----------------------------
 
-    print(f"Saved MALA mixture output to {out_dir}")
+# for seed in seeds:
+#     print(f"\nRunning vanilla Gibbs mixture, seed={seed}")
+
+#     out_dir = f"exp_output/mixture2_gibbs_seed{seed}"
+
+#     xs_gibbs, zs_gibbs, cs_gibbs, pis_gibbs = vanilla_gibbs_mixture_sampler(
+#         data=data,
+#         candidate_angles=candidate_angles,
+#         sigma2=sigma2,
+#         sigma_eps2=sigma_eps2,
+#         alpha=1.0,
+#         n_mixtures=2,
+#         n_samples=200,
+#         n_burnins=50,
+#         random_state=seed,
+#         x_init=x_init_cheat,
+#         verbose=10,
+#         imshow=False,
+#         imsave=True,
+#         dir=out_dir,
+#     )
+
+#     np.save(f"{out_dir}/xs_gibbs.npy", np.array(xs_gibbs))
+#     np.save(f"{out_dir}/zs_gibbs.npy", np.array(zs_gibbs))
+#     np.save(f"{out_dir}/cs_gibbs.npy", np.array(cs_gibbs))
+#     np.save(f"{out_dir}/pis_gibbs.npy", np.array(pis_gibbs))
+
+#     print(f"Saved Gibbs mixture output to {out_dir}")
+
+
+# # -----------------------------
+# # Run MALA mixture
+# # -----------------------------
+
+# for seed in seeds:
+#     print(f"\nRunning MALA mixture, seed={seed}")
+
+#     out_dir = f"exp_output/mixture2_mala_seed{seed}"
+
+#     xs_mala, zs_mala, cs_mala, pis_mala = MALA_mixture_sampler(
+#         data=data,
+#         candidate_angles=candidate_angles,
+#         sigma2=sigma2,
+#         alpha=1.0,
+#         n_mixtures=2,
+#         n_gibbs=200,
+#         n_burnins=50,
+#         n_inner=20,
+#         lr=1e-5,
+#         lam=5e-3,
+#         temp_start=2.0,
+#         temp_end=1.0,
+#         temp_decay=0.995,
+#         seed=seed,
+#         x_init=x_init_cheat,
+#         verbose=10,
+#         imshow=False,
+#         imsave=True,
+#         dir=out_dir,
+#     )
+
+#     np.save(f"{out_dir}/xs_mala.npy", np.array(xs_mala))
+#     np.save(f"{out_dir}/zs_mala.npy", np.array(zs_mala))
+#     np.save(f"{out_dir}/cs_mala.npy", np.array(cs_mala))
+#     np.save(f"{out_dir}/pis_mala.npy", np.array(pis_mala))
+
+#     print(f"Saved MALA mixture output to {out_dir}")
