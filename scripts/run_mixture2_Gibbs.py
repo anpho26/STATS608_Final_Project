@@ -97,9 +97,10 @@ print("True angle range:", true_angles.min(), true_angles.max())
 seeds = [0, 100, 200]
 for seed in seeds:
     print(f'Running experiment with seed {seed} ...')
-    MCMC_experiment_mixture2(data, candidate_angles,
-                            seed=seed, sigma2=sigma2, sigma_eps2=sigma_eps2,
-                            save_dir=f'exp_output/test_mcmc_mix_s{seed}')
+    MCMC_experiment_mixture2(d, img_1, img_2, 0.5,
+                             data, candidate_angles,
+                             seed=seed, sigma2=sigma2, sigma_eps2=sigma_eps2,
+                             save_dir=f'exp_output/test_mcmc_mix_s{seed}')
 
 
 # # -----------------------------
