@@ -428,11 +428,29 @@ def simulate_data(
     angle_low=0.0,
     angle_high=360.0,
 ):
+    """
+    Simulate noisy Radon projections.
+
+    Viewing angles are sampled uniformly from the interval
+    [angle_low, angle_high).
+
+    Setting
+        angle_low=0, angle_high=360
+    recovers the full uniform (Haar) distribution.
+
+    Choosing a smaller interval produces a truncated Haar measure.
+    """
+
     rng = np.random.default_rng(seed)
 
-    true_angles = rng.uniform(angle_low, angle_high, size=n_obs)
+    true_angles = rng.uniform(
+        angle_low,
+        angle_high,
+        size=n_obs,
+    )
 
     clean = radon_rows(image, true_angles)
+
     Y = clean + noise_std * rng.standard_normal(clean.shape)
 
     return Y, true_angles

@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from skimage.transform import resize
 from src.utils import load_image, circle_mask, simulate_data, \
-                      generate_i, generate_square, generate_Sshape, generate_7shape
+                      generate_i, generate_square, generate_Sshape, generate_4shape
 from src.experiment import MCMC_experiment, MCMC_experiment_poster
 from skimage.color import rgb2gray
 
@@ -22,7 +22,7 @@ candidate_angles = np.arange(0, 360, 4, dtype=float)
 # run MCMC for phantom image
 
 # img_3 = load_image("data/raw/13098l.png", size=d)
-img_3 = generate_7shape(size= 32)
+img_3 = generate_4shape(size= 32)
 
 mask_d = circle_mask(d)
 img_3 = np.where(mask_d, img_3, 0.0)
@@ -48,7 +48,7 @@ for seed in seeds:
         seed=seed,
         candidate_angles=candidate_angles,
         sigma2=sigma2,
-        save_dir=f'exp_output/test_poster0_seed{seed}',
+        save_dir=f'exp_output1/test_poster0_seed{seed}',
         vg_params=vg_params,
         mala_params=mala_params
     )
